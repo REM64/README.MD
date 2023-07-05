@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Capybara Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    #score {
+      font-size: 36px;
+      font-weight: bold;
+      color: green;
+    }
+    #booster2x,
+    #booster20x,
+    #booster2000x,
+    #booster69000x {
+      font-size: 18px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+    #booster2x.disabled,
+    #booster20x.disabled,
+    #booster2000x.disabled,
+    #booster69000x.disabled {
+      color: red;
+    }
+    #booster2x.enabled,
+    #booster20x.enabled,
+    #booster2000x.enabled,
+    #booster69000x.enabled {
+      color: green;
+    }
+    #capybara-button {
+      margin-top: 50px;
+      width: 200px;
+      height: 200px;
+      background-image: url('capybara.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      border: none;
+      cursor: pointer;
+    }
+    #save-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    #import-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 18px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    #import-button input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Capybara Game</h1>
+  <p>Click the capybara to score points!</p>
+  <p>Current Score: <span id="score">0</span></p>
+  <div id="boosters">
+    <p>Boosters:</p>
+    <button id="booster2x" disabled>Buy 2x Booster (100 points)</button>
+    <button id="booster20x" disabled>Buy 20x Booster (1000 points)</button>
+    <button id="booster2000x" disabled>Buy 2000x Booster (100000 points)</button>
+    <button id="booster69000x">Buy 69000x Booster (1 point)</button>
+  </div>
+  <button id="capybara-button"></button>
+  <button id="save-button">Save Progress</button>
+  <button id="import-button">
+    Import Skin
+    <input type="file" accept="image/*">
+  </button>
+  <script>
+    let score = BigInt(0);
+    let boosterLevel = 1n;
+    const boosterCosts = {
+      2n: 100n,
+      20n: 1000n,
+      2000n: 100000n,
+      69000n: 1n,
+    };
+
+    // Load the saved progress
+    const savedScore = localStorage.getItem("capybaraScore");
+    if (savedScore) {
+      score = BigInt(savedScore);
+      document.getElementById("score").textContent = score.toLocaleString();
+    }
+
+    function updateScore(points) {
+      score += points * boosterLevel;
+      document.getElementById("score").textContent = score.toLocaleString();
+    }
+
+    function buyBooster(level) {
+      const cost = boosterCosts[level];
+      if (score >= cost) {
+        score -= cost;
+        boosterLevel *= BigInt(level); // Multiply the current booster level by the purchased level
+        updateScore(0);
+        updateBoosters();
+      }
+    }
+
+    function updateBoosters() {
+      const booster2xButton = document.getElementById("booster2x");
+      const booster20xButton = document.getElementById("booster20x");
+      const booster2000xButton = document.getElementById("booster2000x");
+      const booster69000xButton = document.getElementById("booster69000x");
+
+      booster2xButton.disabled = score < boosterCosts[2n];
+      booster20xButton.disabled = score < boosterCosts[20n];
+      booster2000xButton.disabled = score < boosterCosts[2000n];
+      booster69000xButton.disabled = score < boosterCosts[69000n];
+
+      booster2xButton.className = booster2xButton.disabled ? "disabled" : "enabled";
+      booster20xButton.className = booster20xButton.disabled ? "disabled" : "enabled";
+      booster2000xButton.className = booster2000xButton.disabled ? "disabled" : "enabled";
+      booster69000xButton.className = booster69000xButton.disabled ? "disabled" : "enabled";
+    }
+
+    document.getElementById("booster2x").addEventListener("click", function() {
+      buyBooster(2n);
+    });
+
+    document.getElementById("booster20x").addEventListener("click", function() {
+      buyBooster(20n);
+    });
+
+    document.getElementById("booster2000x").addEventListener("click", function() {
+      buyBooster(2000n);
+    });
+
+    document.getElementById("booster69000x").addEventListener("click", function() {
+      buyBooster(69000n);
+    });
+
+    document.getElementById("capybara-button").addEventListener("click", function() {
+      updateScore(69000000000000000000000000000n);
+      updateBoosters();
+    });
+
+    document.getElementById("save-button").addEventListener("click", function() {
+      saveProgress();
+    });
+
+    document.getElementById("import-button").addEventListener("click", function() {
+      document.querySelector("#import-button input[type='file']").click();
+    });
+
+    document.querySelector("#import-button input[type='file']").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function() {
+          const imageUrl = reader.result;
+          const capybaraButton = document.getElementById("capybara-button");
+          capybaraButton.style.backgroundImage = `url(${imageUrl})`;
+
+          const img = new Image();
+          img.src = imageUrl;
+          img.onload = function() {
+            const width = img.width;
+            const height = img.height;
+
+            if (width > height) {
+              capybaraButton.style.backgroundSize = "auto 100%";
+            } else {
+              capybaraButton.style.backgroundSize = "100% auto";
+            }
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function saveProgress() {
+      localStorage.setItem("capybaraScore", score.toString());
+      alert("Progress saved!");
+    }
+
+    window.addEventListener("beforeunload", function() {
+      saveProgress();
+    });
+  </script>
+</body>
+</html>
